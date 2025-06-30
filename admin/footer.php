@@ -78,8 +78,21 @@
 <!-- App js -->
 <script src="assets/js/app.js"></script>
 
-    <!-- Datatable init js -->
-    <script src="assets/js/pages/datatables.init.js"></script>
+<!-- Datatable init js -->
+<script src="assets/js/pages/datatables.init.js"></script>
+<!-- Bootstrap Tags Input JS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-tagsinput/0.8.0/bootstrap-tagsinput.min.js"></script>
+
+<script>
+    $(document).ready(function() {
+        // Tags input initialize karein
+        $('input[data-role="tagsinput"]').tagsinput({
+            confirmKeys: [13, 44], // Enter aur Comma
+            maxTags: 10,
+            trimValue: true
+        });
+    });
+</script>
 
 
 </body>

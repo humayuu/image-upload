@@ -26,8 +26,26 @@
     <link href="assets/css/icons.min.css" rel="stylesheet" type="text/css" />
     <!-- App Css-->
     <link href="assets/css/app.min.css" id="app-style" rel="stylesheet" type="text/css" />
+    <!-- Bootstrap Tags Input CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-tagsinput/0.8.0/bootstrap-tagsinput.css">
 
-
+<style>
+.bootstrap-tagsinput {
+    width: 100%;
+    min-height: 38px;
+    padding: 6px 12px;
+    background-color: #fff;
+    border: 1px solid #ced4da;
+    border-radius: 0.375rem;
+}
+.bootstrap-tagsinput .tag {
+    background-color: #007bff;
+    color: white;
+    padding: 2px 8px;
+    margin: 2px;
+    border-radius: 3px;
+}
+</style>
 
 
 </head>
@@ -44,7 +62,7 @@
                 <div class="d-flex">
                     <!-- LOGO -->
                     <div class="navbar-brand-box">
-                        <a href="index.html" class="logo logo-dark">
+                        <a href="dashboard.php" class="logo logo-dark">
                             <span class="logo-sm">
                                 <img src="assets/images/logo-sm.png" alt="logo-sm" height="22">
                             </span>
@@ -242,9 +260,9 @@
                                 <span>Manage Category</span>
                             </a>
                             <ul class="sub-menu" aria-expanded="false">
-                                <li><a href="#">All Category</a></li>
-                                <li><a href="#">All Sub-Category</a></li>
-                                <li><a href="#">All Sub-Sub-Category</a></li>
+                                <li><a href="category.php">All Category</a></li>
+                                <li><a href="sub_category.php">All Sub-Category</a></li>
+                                <li><a href="subsub_category.php">All Sub-Sub-Category</a></li>
                             </ul>
                         </li>
 
@@ -254,8 +272,8 @@
                                 <span>Manage Products</span>
                             </a>
                             <ul class="sub-menu" aria-expanded="false">
-                                <li><a href="#">All Product</a></li>
-                                <li><a href="#">View Product</a></li>
+                                <li><a href="product_add.php">Add Product</a></li>
+                                <li><a href="product.php">View Product</a></li>
                             </ul>
                         </li>
 
@@ -265,8 +283,7 @@
                                 <span>Manage Users</span>
                             </a>
                             <ul class="sub-menu" aria-expanded="false">
-                                <li><a href="#">All Users</a></li>
-                                <li><a href="#">View Users</a></li>
+                                <li><a href="user.php">All Users</a></li>
                             </ul>
                         </li>
                     </ul>
