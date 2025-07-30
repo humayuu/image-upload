@@ -3,32 +3,54 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Product Form</title>
-  <link rel="stylesheet" href="assets/styles.css">
+  <title>Product Table</title>
+  <link rel="stylesheet" href="assets/table-styles.css">
 </head>
 
 <body>
-  <div class="form-container">
-    <h2 class="form-title">Add Product</h2>
-    <form id="productForm">
-      <div class="form-group">
-        <label for="productName">Product Name</label>
-        <input type="text" id="productName" name="productName" required>
-      </div>
-
-      <div class="form-group">
-        <label for="productImage">Product Image</label>
-        <input type="file" id="productImage" name="productImage" accept="image/*" class="file-input">
-      </div>
-
-      <div class="form-group">
-        <label for="multipleImages">Multiple Images</label>
-        <input type="file" id="multipleImages" name="multipleImages" accept="image/*" multiple class="file-input">
-      </div>
-
-      <button type="submit" class="submit-btn">Add Product</button>
-    </form>
+  <div class="table-container">
+    <div class="table-header">
+      <h2 class="table-title">Product List</h2>
+      <a href="add.php" style="text-decoration: none;" class="btn-add-product">Add Product</a>
+    </div>
+    <div class="table-wrapper">
+      <table id="productTable">
+        <thead>
+          <tr>
+            <th>Product Name</th>
+            <th>Main Image</th>
+            <th>Multiple Images</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Sample Product 1</td>
+            <td>
+              <div class="image-cell">
+                <img src="#" alt="Product Image" class="product-image">
+              </div>
+            </td>
+            <td>
+              <div class="multiple-images">
+                <img src="#" alt="Image 1" class="thumbnail">
+                <img src="#" alt="Image 2" class="thumbnail">
+                <img src="#" alt="Image 3" class="thumbnail">
+              </div>
+            </td>
+            <td>
+              <div class="action-buttons">
+                <a href="edit.php" style="text-decoration: none;" class="btn-edit">Edit</a>
+                <a href="delete.php" onclick="return confirm('Are You Sure?')" style="text-decoration: none;" class="btn-delete">Delete</a>
+              </div>
+            </td>
+          </tr>
+       
+        </tbody>
+      </table>
+    </div>
   </div>
-</body>
 
+
+</body>
 </html>
