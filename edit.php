@@ -14,19 +14,22 @@ if ($_SERVER['REQUEST_METHOD'] === "POST" && isset($_POST['isSubmitted'])) {
   }
 
   try {
+    
     $id = htmlspecialchars($_POST['id']);
     $name = filter_var($_POST['productName'], FILTER_SANITIZE_FULL_SPECIAL_CHARS);
     $multiple = "image will be here";
     $image = null;
 
+    $row = $conn->prepare("SELECT * FROM product_tbl WHERE id = :id");
+    $row->bindParam(":id", $id);
+    $row->execute();
+    $productImage = $row->fetch(PDO::FETCH_ASSOC);
+    $oldImage =  $productImage['product_image'];
+
 
     if (isset($_FILES['productImage']) && $_FILES['productImage']['error'] === UPLOAD_ERR_OK) {
 
-      $row = $conn->prepare("SELECT * FROM product_tbl WHERE id = :id");
-      $row->bindParam(":id", $id);
-      $row->execute();
-      $productImage = $row->fetch(PDO::FETCH_ASSOC);
-      $oldImage =  $productImage['product_image'];
+
 
       $allowedExt = ['jpg', 'jpeg', 'png', 'gif'];
       $maxFileSize = 2 * 1024 * 1024; // 2MB
@@ -76,12 +79,6 @@ if ($_SERVER['REQUEST_METHOD'] === "POST" && isset($_POST['isSubmitted'])) {
         exit;
       }
     } else {
-
-      $row = $conn->prepare("SELECT * FROM product_tbl WHERE id = :id");
-      $row->bindParam(":id", $id);
-      $row->execute();
-      $productImage = $row->fetch(PDO::FETCH_ASSOC);
-      $oldImage =  $productImage['product_image'];
 
       $image = $oldImage;
       $sql = $conn->prepare("UPDATE product_tbl SET product_name = :pname, product_image = :pimage, multiple_image = :mpimage WHERE id = :id");
