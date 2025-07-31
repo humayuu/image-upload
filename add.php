@@ -14,72 +14,87 @@ if ($_SERVER['REQUEST_METHOD'] === "POST" && isset($_POST['isSubmitted'])) {
   }
 
   try {
-    $name = filter_var($_POST['productName'], FILTER_SANITIZE_FULL_SPECIAL_CHARS);
-    $multiple = "image will be here";
+    $name      = filter_var($_POST['productName'], FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+    $uploadDir = __DIR__ . '/uploads/products/';
+    $allowedExt  = ['jpg', 'jpeg', 'png', 'gif'];
+    $maxFileSize = 2 * 1024 * 1024; // 2MB
+
+    // make sure upload dir exists
+    if (!is_dir($uploadDir)) {
+      mkdir($uploadDir, 0755, true);
+    }
+
+    // ---- single image ----
     $image = null;
-
-
     if (isset($_FILES['productImage']) && $_FILES['productImage']['error'] === UPLOAD_ERR_OK) {
+      
+      $ext  = strtolower(pathinfo($_FILES['productImage']['name'], PATHINFO_EXTENSION));
+      $size = $_FILES['productImage']['size'];
+      $tmp  = $_FILES['productImage']['tmp_name'];
 
-      $allowedExt = ['jpg', 'jpeg', 'png', 'gif'];
-      $maxFileSize = 2 * 1024 * 1024; // 2MB
-
-      $fileName     = $_FILES['productImage']['name'];
-      $filetype     = $_FILES['productImage']['type'];
-      $filesize     = $_FILES['productImage']['size'];
-      $fileTmpName  = $_FILES['productImage']['tmp_name'];
-      $ext      = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
-
-      if ($filesize > $maxFileSize) {
+      if ($size > $maxFileSize) {
         header("Location: {$_SERVER['PHP_SELF']}?sizeError=1");
         exit;
       }
-
       if (!in_array($ext, $allowedExt)) {
         header("Location: {$_SERVER['PHP_SELF']}?typeError=1");
         exit;
       }
 
-      $uploadDir  = __DIR__ . '/uploads/products/';
-      if (!is_dir($uploadDir)) {
-        mkdir($uploadDir, 0755, true);
-      }
-
-      $newName     = uniqid('pro_') . '_' . time() . '.' . $ext;
-      $targetPath  = $uploadDir . $newName;
-
-      if (!move_uploaded_file($fileTmpName, $targetPath)) {
-        error_log("Failed moving single upload to: $targetPath");
+      $newName = uniqid('pro_') . '_' . time() . '.' . $ext;
+      if (!move_uploaded_file($tmp, $uploadDir . $newName)) {
         header("Location: {$_SERVER['PHP_SELF']}?uploadError=1");
         exit;
       }
 
       $image = 'uploads/products/' . $newName;
+    }
 
-      $sql = $conn->prepare("INSERT INTO product_tbl (product_name, product_image, multiple_image) VALUES (?,?,?)");
-      $result = $sql->execute([$name, $image, $multiple]);
+    // ---- multiple images ----
+    $multiNames = [];
+    if (isset($_FILES['multipleImages']) && is_array($_FILES['multipleImages']['error']) && $_FILES['multipleImages']['error'][0] === UPLOAD_ERR_OK) {
 
-      if ($result) {
-        header("Location: index.php?success=1");
-        exit;
-      }
-    } else {
+      foreach ($_FILES['multipleImages']['name'] as $i => $origName) {
+        $ext  = strtolower(pathinfo($origName, PATHINFO_EXTENSION));
+        $size = $_FILES['multipleImages']['size'][$i];
+        $tmp  = $_FILES['multipleImages']['tmp_name'][$i];
 
-      $image = "Image Will be here";
+        if ($size > $maxFileSize) {
+          header("Location: {$_SERVER['PHP_SELF']}?sizeError=1");
+          exit;
+        }
+        if (!in_array($ext, $allowedExt)) {
+          header("Location: {$_SERVER['PHP_SELF']}?typeError=1");
+          exit;
+        }
 
-      $sql = $conn->prepare("INSERT INTO product_tbl (product_name, product_image, multiple_image) VALUES (?,?,?)");
-      $result = $sql->execute([$name, $image, $multiple]);
-
-      if ($result) {
-        header("Location: index.php?success=1");
-        exit;
+        $newMulti = uniqid('pro_') . '_' . time() . "_$i." . $ext;
+        if (!move_uploaded_file($tmp, $uploadDir . $newMulti)) {
+          header("Location: {$_SERVER['PHP_SELF']}?uploadError=1");
+          exit;
+        }
+        $multiNames[] = 'uploads/products/' . $newMulti;
       }
     }
+
+    // implode into a comma-separated list (or leave null if none)
+    $multiple = $multiNames ? implode(',', $multiNames) : null;
+
+    // ---- insert ----
+    $sql = $conn->prepare("INSERT INTO product_tbl (product_name, product_image, multiple_image) VALUES (?,?,?)");
+    $result = $sql->execute([$name, $image, $multiple]);
+
+    if ($result) {
+      header("Location: index.php?success=1");
+      exit;
+    }
   } catch (PDOException $e) {
-    error_log("Product adding Failed " . "in" . __FILE__ . "on" . __LINE__ . $e->getMessage());
+    error_log("Product adding failed in " . __FILE__ . " on line " . __LINE__ . " : " . $e->getMessage());
   }
 }
+
 ?>
+
 
 <!DOCTYPE html>
 <html lang="en">

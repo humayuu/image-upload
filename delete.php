@@ -9,18 +9,34 @@ try {
     $row = $image->fetch(PDO::FETCH_ASSOC);
 
     $oldImage = $row['product_image'];
+    $oldMultipleImage = $row['multiple_image'];
 
 
     $sql = $conn->prepare("DELETE FROM product_tbl WHERE id = ?");
     $result = $sql->execute([$id]);
 
-
     if ($result) {
-        unlink($oldImage);
+        // Delete main image
+        if (!empty($oldImage) && file_exists($oldImage)) {
+            unlink($oldImage);
+        }
+
+        // Delete multiple images
+        if (!empty($oldMultipleImage)) {
+            $multiImages = explode(',', $oldMultipleImage);
+            foreach ($multiImages as $img) {
+                $img = trim($img);
+                if (!empty($img) && file_exists($img)) {
+                    unlink($img);
+                }
+            }
+        }
+
         header("Location: index.php?success=1");
+        exit;
     }
 } catch (PDOException $e) {
-    error_log("Product Delete Failed " . "in" . __FILE__ . "on" . __LINE__ . $e->getMessage());
+    error_log("Product Deletion failed in " . __FILE__ . " on line " . __LINE__ . " : " . $e->getMessage());
 }
 
 

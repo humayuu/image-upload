@@ -14,83 +14,105 @@ if ($_SERVER['REQUEST_METHOD'] === "POST" && isset($_POST['isSubmitted'])) {
   }
 
   try {
-    
+
     $id = htmlspecialchars($_POST['id']);
-    $name = filter_var($_POST['productName'], FILTER_SANITIZE_FULL_SPECIAL_CHARS);
-    $multiple = "image will be here";
-    $image = null;
+    $name      = filter_var($_POST['productName'], FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+    $uploadDir = __DIR__ . '/uploads/products/';
+    $allowedExt  = ['jpg', 'jpeg', 'png', 'gif'];
+    $maxFileSize = 2 * 1024 * 1024; // 2MB
+
+
+    // make sure upload dir exists
+    if (!is_dir($uploadDir)) {
+      mkdir($uploadDir, 0755, true);
+    }
+
 
     $row = $conn->prepare("SELECT * FROM product_tbl WHERE id = :id");
     $row->bindParam(":id", $id);
     $row->execute();
     $productImage = $row->fetch(PDO::FETCH_ASSOC);
     $oldImage =  $productImage['product_image'];
+    $oldMultiImage =  $productImage['multiple_image'];
 
 
+
+    // ---- single image ----
+    $image = null;
     if (isset($_FILES['productImage']) && $_FILES['productImage']['error'] === UPLOAD_ERR_OK) {
 
+      $ext  = strtolower(pathinfo($_FILES['productImage']['name'], PATHINFO_EXTENSION));
+      $size = $_FILES['productImage']['size'];
+      $tmp  = $_FILES['productImage']['tmp_name'];
 
-
-      $allowedExt = ['jpg', 'jpeg', 'png', 'gif'];
-      $maxFileSize = 2 * 1024 * 1024; // 2MB
-
-      $fileName     = $_FILES['productImage']['name'];
-      $filetype     = $_FILES['productImage']['type'];
-      $filesize     = $_FILES['productImage']['size'];
-      $fileTmpName  = $_FILES['productImage']['tmp_name'];
-      $ext      = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
-
-      if ($filesize > $maxFileSize) {
+      if ($size > $maxFileSize) {
         header("Location: {$_SERVER['PHP_SELF']}?sizeError=1");
         exit;
       }
-
       if (!in_array($ext, $allowedExt)) {
         header("Location: {$_SERVER['PHP_SELF']}?typeError=1");
         exit;
       }
 
-      $uploadDir  = __DIR__ . '/uploads/products/';
-      if (!is_dir($uploadDir)) {
-        mkdir($uploadDir, 0755, true);
-      }
-
-      $newName     = uniqid('pro_') . '_' . time() . '.' . $ext;
-      $targetPath  = $uploadDir . $newName;
-
-      if (!move_uploaded_file($fileTmpName, $targetPath)) {
-        error_log("Failed moving single upload to: $targetPath");
+      $newName = uniqid('pro_') . '_' . time() . '.' . $ext;
+      if (!move_uploaded_file($tmp, $uploadDir . $newName)) {
         header("Location: {$_SERVER['PHP_SELF']}?uploadError=1");
         exit;
       }
 
       $image = 'uploads/products/' . $newName;
+      // ---- multiple images ----
+      $multiNames = [];
+      if (isset($_FILES['multipleImages']) && is_array($_FILES['multipleImages']['error']) && $_FILES['multipleImages']['error'][0] === UPLOAD_ERR_OK) {
 
-      $sql = $conn->prepare("UPDATE product_tbl SET product_name = :pname, product_image = :pimage, multiple_image = :mpimage WHERE id = :id");
-      $sql->bindParam(":pname", $name);
-      $sql->bindParam(":pimage", $image);
-      $sql->bindParam(":mpimage", $multiple);
-      $sql->bindParam(":id", $id);
-      unlink($oldImage);
-      $result = $sql->execute();
+        foreach ($_FILES['multipleImages']['name'] as $i => $origName) {
+          $ext  = strtolower(pathinfo($origName, PATHINFO_EXTENSION));
+          $size = $_FILES['multipleImages']['size'][$i];
+          $tmp  = $_FILES['multipleImages']['tmp_name'][$i];
 
-      if ($result) {
-        header("Location: index.php?success=1");
-        exit;
-      }
-    } else {
+          if ($size > $maxFileSize) {
+            header("Location: {$_SERVER['PHP_SELF']}?sizeError=1");
+            exit;
+          }
+          if (!in_array($ext, $allowedExt)) {
+            header("Location: {$_SERVER['PHP_SELF']}?typeError=1");
+            exit;
+          }
 
-      $image = $oldImage;
-      $sql = $conn->prepare("UPDATE product_tbl SET product_name = :pname, product_image = :pimage, multiple_image = :mpimage WHERE id = :id");
-      $sql->bindParam(":pname", $name);
-      $sql->bindParam(":pimage", $image);
-      $sql->bindParam(":mpimage", $multiple);
-      $sql->bindParam(":id", $id);
-      $result = $sql->execute();
+          $newMulti = uniqid('pro_') . '_' . time() . "_$i." . $ext;
+          if (!move_uploaded_file($tmp, $uploadDir . $newMulti)) {
+            header("Location: {$_SERVER['PHP_SELF']}?uploadError=1");
+            exit;
+          }
+          $multiNames[] = 'uploads/products/' . $newMulti;
+        }
 
-      if ($result) {
-        header("Location: index.php?success=1");
-        exit;
+        $sql = $conn->prepare("UPDATE product_tbl SET product_name = :pname, product_image = :pimage, multiple_image = :mpimage WHERE id = :id");
+        $sql->bindParam(":pname", $name);
+        $sql->bindParam(":pimage", $image);
+        $sql->bindParam(":mpimage", $multiNames);
+        $sql->bindParam(":id", $id);
+        $result = $sql->execute();
+
+        if ($result) {
+          header("Location: index.php?success=1");
+          exit;
+        }
+      } else {
+
+        $multiple = $oldMultiImage;
+        $image = $oldImage;
+        $sql = $conn->prepare("UPDATE product_tbl SET product_name = :pname, product_image = :pimage, multiple_image = :mpimage WHERE id = :id");
+        $sql->bindParam(":pname", $name);
+        $sql->bindParam(":pimage", $image);
+        $sql->bindParam(":mpimage", $multiple);
+        $sql->bindParam(":id", $id);
+        $result = $sql->execute();
+
+        if ($result) {
+          header("Location: index.php?success=1");
+          exit;
+        }
       }
     }
   } catch (PDOException $e) {

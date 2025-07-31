@@ -45,11 +45,13 @@ $products = $sql->fetchAll(PDO::FETCH_ASSOC);
                 </td>
                 <td>
                   <div class="multiple-images">
-                    <img src="#" alt="Image 1" class="thumbnail">
-                    <img src="#" alt="Image 2" class="thumbnail">
-                    <img src="#" alt="Image 3" class="thumbnail">
+                    <?php $images = explode(',', $product['multiple_image']);
+                    foreach ($images as $imgPath): ?>
+                      <img src="<?= $imgPath ?>" alt="Image" class="thumbnail">
+                    <?php endforeach; ?>
                   </div>
                 </td>
+
                 <td>
                   <div class="action-buttons">
                     <a href="edit.php?id=<?= $product['id'] ?>" style="text-decoration: none;" class="btn-edit">Edit</a>
