@@ -13,71 +13,71 @@ if ($_SERVER['REQUEST_METHOD'] === "POST" && isset($_POST['isSubmitted'])) {
     exit;
   }
 
- try{
- $name = filter_var($_POST['productName'], FILTER_SANITIZE_FULL_SPECIAL_CHARS);
-  $multiple = "image will be here";
-  $image = null;
+  try {
+    $name = filter_var($_POST['productName'], FILTER_SANITIZE_FULL_SPECIAL_CHARS);
+    $multiple = "image will be here";
+    $image = null;
 
 
-  if (isset($_FILES['productImage']) && $_FILES['productImage']['error'] === UPLOAD_ERR_OK) {
+    if (isset($_FILES['productImage']) && $_FILES['productImage']['error'] === UPLOAD_ERR_OK) {
 
-    $allowedExt = ['jpg', 'jpeg', 'png', 'gif'];
-    $maxFileSize = 2 * 1024 * 1024; // 2MB
+      $allowedExt = ['jpg', 'jpeg', 'png', 'gif'];
+      $maxFileSize = 2 * 1024 * 1024; // 2MB
 
-    $fileName     = $_FILES['productImage']['name'];
-    $filetype     = $_FILES['productImage']['type'];
-    $filesize     = $_FILES['productImage']['size'];
-    $fileTmpName  = $_FILES['productImage']['tmp_name'];
-    $ext      = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
+      $fileName     = $_FILES['productImage']['name'];
+      $filetype     = $_FILES['productImage']['type'];
+      $filesize     = $_FILES['productImage']['size'];
+      $fileTmpName  = $_FILES['productImage']['tmp_name'];
+      $ext      = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
 
-    if ($filesize > $maxFileSize) {
-      header("Location: {$_SERVER['PHP_SELF']}?sizeError=1");
-      exit;
+      if ($filesize > $maxFileSize) {
+        header("Location: {$_SERVER['PHP_SELF']}?sizeError=1");
+        exit;
+      }
+
+      if (!in_array($ext, $allowedExt)) {
+        header("Location: {$_SERVER['PHP_SELF']}?typeError=1");
+        exit;
+      }
+
+      $uploadDir  = __DIR__ . '/uploads/products/';
+      if (!is_dir($uploadDir)) {
+        mkdir($uploadDir, 0755, true);
+      }
+
+      $newName     = uniqid('pro_') . '_' . time() . '.' . $ext;
+      $targetPath  = $uploadDir . $newName;
+
+      if (!move_uploaded_file($fileTmpName, $targetPath)) {
+        error_log("Failed moving single upload to: $targetPath");
+        header("Location: {$_SERVER['PHP_SELF']}?uploadError=1");
+        exit;
+      }
+
+      $image = 'uploads/products/' . $newName;
+
+      $sql = $conn->prepare("INSERT INTO product_tbl (product_name, product_image, multiple_image) VALUES (?,?,?)");
+      $result = $sql->execute([$name, $image, $multiple]);
+
+      if ($result) {
+        header("Location: index.php?success=1");
+        exit;
+      }
+    } else {
+
+      $image = "Image Will be here";
+
+      $sql = $conn->prepare("INSERT INTO product_tbl (product_name, product_image, multiple_image) VALUES (?,?,?)");
+      $result = $sql->execute([$name, $image, $multiple]);
+
+      if ($result) {
+        header("Location: index.php?success=1");
+        exit;
+      }
     }
-
-    if (!in_array($ext, $allowedExt)) {
-      header("Location: {$_SERVER['PHP_SELF']}?typeError=1");
-      exit;
-    }
-
-    $uploadDir  = __DIR__ . '/uploads/products/';
-    if (!is_dir($uploadDir)) {
-      mkdir($uploadDir, 0755, true);
-    }
-    
-    $newName     = uniqid('pro_') . '_' . time() . '.' . $ext;
-    $targetPath  = $uploadDir . $newName;
-
-    if (!move_uploaded_file($fileTmpName, $targetPath)) {
-      error_log("Failed moving single upload to: $targetPath");
-      header("Location: {$_SERVER['PHP_SELF']}?uploadError=1");
-      exit;
-    }
-
-    $image = 'uploads/products/' . $newName;
-
-    $sql = $conn->prepare("INSERT INTO product_tbl (product_name, product_image, multiple_image) VALUES (?,?,?)");
-    $result = $sql->execute([$name, $image, $multiple]);
-
-    if ($result) {
-      header("Location: index.php?success=1");
-      exit;
-    }
-  } else {
-
-    $image = "Image Will be here";
-
-    $sql = $conn->prepare("INSERT INTO product_tbl (product_name, product_image, multiple_image) VALUES (?,?,?)");
-    $result = $sql->execute([$name, $image, $multiple]);
-
-    if ($result) {
-      header("Location: index.php?success=1");
-      exit;
-    }
+  } catch (PDOException $e) {
+    error_log("Product adding Failed " . "in" . __FILE__ . "on" . __LINE__ . $e->getMessage());
   }
- } catch (PDOException $e) {
-  error_log("Product adding Failed " . "in" . __FILE__ . "on" . __LINE__ . $e->getMessage());
- }
 }
 ?>
 
